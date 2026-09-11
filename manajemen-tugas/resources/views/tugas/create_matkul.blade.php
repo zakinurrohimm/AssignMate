@@ -3,41 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AssignMate - Tambah Mata Kuliah Baru</title>
+    <title>REGISTRATION_COURSE</title>
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     @vite('resources/css/app.css')
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Rajdhani', sans-serif; }
+        .mono-font { font-family: 'Share Tech Mono', monospace; }
+        .scanlines {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+            background-size: 100% 4px;
+        }
+    </style>
 </head>
 
-<body class="bg-slate-50 text-slate-800 p-8 pt-28 min-h-screen">
+<body class="bg-[#0b0c10] text-slate-200 min-h-screen flex flex-col relative selection:bg-amber-500 selection:text-black">
     
-    <!-- Memanggil Header Modular -->
-    <x-header />
+    <!-- Garis Scanlines -->
+    <div class="absolute inset-0 scanlines pointer-events-none z-10 opacity-40"></div>
 
-    <main class="max-w-5xl mx-auto">
+    <!-- Header / Navigasi Taktis -->
+    <x-header :showReturn="true" returnUrl="/" />
+
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-16 relative z-20 flex-grow w-full">
         
-        <!-- Notifikasi Sukses & Error dari Controller -->
+        <!-- Notifikasi Sukses / Error -->
         @if (session('success'))
-            <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between">
-                <span class="text-sm font-medium">✨ {{ session('success') }}</span>
+            <div class="mb-6 bg-zinc-900 border-l-4 border-emerald-500 text-emerald-400 px-4 py-3 text-xs mono-font uppercase flex justify-between items-center">
+                <span>[SUCCESS]: {{ session('success') }}</span>
             </div>
         @endif
 
         @if (session('error'))
-            <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between">
-                <span class="text-sm font-medium">⚠️ {{ session('error') }}</span>
+            <div class="mb-6 bg-zinc-900 border-l-4 border-rose-500 text-rose-400 px-4 py-3 text-xs mono-font uppercase flex justify-between items-center">
+                <span>[ERROR]: {{ session('error') }}</span>
             </div>
         @endif
 
-        <!-- Grid Layout: Form di Kiri (lebih lebar), Daftar Matkul di Kanan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <!-- Bagian Form (Kiri) -->
-            <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-fit">
-                <h2 class="text-2xl font-bold mb-6 text-indigo-600">Tambah Mata Kuliah Baru</h2>
+            <!-- Form Registrasi Matkul (Kiri) -->
+            <div class="md:col-span-2 bg-zinc-900/90 border border-zinc-800 p-6 h-fit">
+                <div class="border-b border-zinc-800 pb-4 mb-6">
+                    <h2 class="text-lg font-bold tracking-widest text-white uppercase mono-font">// INPUT_COURSE_DATA</h2>
+                    <p class="text-xs text-zinc-500">Register new educational matrix to the system database.</p>
+                </div>
                 
-                <!-- Peringatan Error Validasi (Form kosong / kode kembar) -->
                 @if ($errors->any())
-                    <div class="mb-4 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
-                        <p class="font-semibold mb-1">Terjadi kesalahan:</p>
+                    <div class="mb-6 bg-zinc-950 border border-rose-900/60 text-rose-400 p-4 text-xs mono-font">
+                        <p class="font-bold mb-1">// VALIDATION_FAILED:</p>
                         <ul class="list-disc list-inside space-y-1">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -50,37 +64,42 @@
                     @csrf
                     
                     <div>
-                        <label class="block text-sm font-medium mb-1">Kode Mata Kuliah</label>
-                        <input type="text" name="kode_matkul" value="{{ old('kode_matkul') }}" placeholder="Contoh: IF101" class="w-full border @error('kode_matkul') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-lg p-2 focus:ring focus:ring-indigo-200" required>
-                        @error('kode_matkul')
-                            <span class="text-xs text-rose-600 mt-1 block">{{ $message }}</span>
-                        @enderror
+                        <label class="block text-xs font-bold mono-font text-zinc-400 uppercase mb-1">Kode Mata Kuliah</label>
+                        <input type="text" name="kode_matkul" value="{{ old('kode_matkul') }}" placeholder="Contoh: IF101" 
+                               class="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm rounded-none p-2.5 focus:border-amber-500 focus:outline-none mono-font transition" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-1">Nama Mata Kuliah</label>
-                        <input type="text" name="nama_matkul" value="{{ old('nama_matkul') }}" placeholder="Contoh: Pemrograman Web" class="w-full border border-slate-300 rounded-lg p-2 focus:ring focus:ring-indigo-200" required>
+                        <label class="block text-xs font-bold mono-font text-zinc-400 uppercase mb-1">Nama Mata Kuliah</label>
+                        <input type="text" name="nama_matkul" value="{{ old('nama_matkul') }}" placeholder="Contoh: Pemrograman Web" 
+                               class="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm rounded-none p-2.5 focus:border-amber-500 focus:outline-none transition" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium mb-1">Nama Dosen (Opsional)</label>
-                        <input type="text" name="dosen" value="{{ old('dosen') }}" placeholder="Contoh: Budi S.Kom, M.T" class="w-full border border-slate-300 rounded-lg p-2 focus:ring focus:ring-indigo-200">
+                        <label class="block text-xs font-bold mono-font text-zinc-400 uppercase mb-1">Nama Dosen (Opsional)</label>
+                        <input type="text" name="dosen" value="{{ old('dosen') }}" placeholder="Contoh: Budi S.Kom, M.T" 
+                               class="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm rounded-none p-2.5 focus:border-amber-500 focus:outline-none transition">
                     </div>
 
-                    <div class="flex gap-4 pt-2">
-                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm">Simpan Matkul</button>
-                        <a href="/" class="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition text-center">Batal</a>
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-black px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow-[0_0_15px_rgba(245,158,11,0.2)] mono-font">
+                            [EXECUTE] SIMPAN
+                        </button>
+                        <a href="/" class="border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider transition mono-font text-center flex items-center">
+                            BATAL
+                        </a>
                     </div>
                 </form>
             </div>
 
-            <!-- Bagian Daftar Matkul (Kanan) -->
+            <!-- Daftar Matkul Cepat (Kanan) -->
             <div class="md:col-span-1 h-fit">
                 <x-daftar-matkul :mata_kuliah="$mata_kuliah" />
             </div>
 
         </div>
     </main>
+    <x-footer />
 
 </body>
 </html>

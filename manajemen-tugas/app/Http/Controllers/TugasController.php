@@ -48,11 +48,11 @@ class TugasController extends Controller
         return view('tugas.index', compact('tugas', 'totalTugas', 'tugasSelesai', 'tugasBelum', 'mata_kuliah'));
     }
 
-    public function create()
-    {
-        $mata_kuliah = MataKuliah::all();
-        return view('tugas.create', compact('mata_kuliah'));
-    }
+public function create()
+{
+    $mataKuliah = \App\Models\MataKuliah::all();
+    return view('tugas.create', compact('mataKuliah'));
+}
 
     public function store(Request $request)
     {
@@ -73,9 +73,11 @@ class TugasController extends Controller
     // Fungsi untuk mengubah status tugas menjadi Selesai
     public function updateStatus($id)
     {
-        $tugas = Tugas::findOrFail($id);
-        $tugas->update(['status' => 'Selesai']);
-        return redirect('/');
+    $tugas = \App\Models\Tugas::findOrFail($id);
+    $tugas->status = 'Selesai';
+    $tugas->save();
+
+    return redirect()->back()->with('success', 'Status tugas berhasil diperbarui.');
     }
 
     // Fungsi untuk menghapus tugas dari database
