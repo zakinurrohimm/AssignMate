@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Tugas Kuliah</title>
+    <title>AssignMate - Manajemen Tugas Kuliah</title>
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     @vite('resources/css/app.css')
 </head>
-<body class="bg-slate-50 text-slate-800 p-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-indigo-600">📝 Manajemen Tugas Kuliah</h1>
-            <a href="/tugas/create" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm">
-                + Tambah Tugas
-            </a>
-        </div>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-        <!-- Kotak Statistik Dashboard (Pengganti sheet Dashboard Excel) -->
+    <!-- Memanggil Header Modular -->
+    <x-header />
+    
+    <!-- Main Content (Diberi pt-24 agar konten tidak tertutup header yang melayang) -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-8 pt-24">
+        @if (session('success'))
+            <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between">
+                <span class="text-sm font-medium">✨ {{ session('success') }}</span>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="mb-6 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl shadow-sm flex items-center justify-between">
+                <span class="text-sm font-medium">⚠️ {{ session('error') }}</span>
+            </div>
+        @endif
+        <!-- Kotak Statistik Dashboard -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <p class="text-sm font-medium text-slate-500">Total Tugas</p>
@@ -31,6 +40,9 @@
             </div>
         </div>
         
+        <!-- Memanggil Komponen Daftar Mata Kuliah -->
+        <x-daftar-matkul :mata_kuliah="$mata_kuliah" />
+
         <!-- Tabel Data Tugas -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-x-auto">
             <h2 class="text-xl font-semibold mb-6">Daftar Tugas Aktif</h2>
@@ -66,7 +78,6 @@
                             </td>
                             <td class="p-4 text-center">
                                 <div class="flex justify-center gap-2">
-                                    <!-- Tombol Tandai Selesai -->
                                     <form action="/tugas/{{ $item->id }}/selesai" method="POST">
                                         @csrf
                                         @method('PATCH')
@@ -75,7 +86,6 @@
                                         </button>
                                     </form>
 
-                                    <!-- Tombol Hapus -->
                                     <form action="/tugas/{{ $item->id }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus tugas ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -96,6 +106,14 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </main>
+
+    <!-- Footer di Paling Bawah -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+        <div class="max-w-6xl mx-auto px-8 text-center text-sm text-slate-500">
+            &copy; 2026 Manajemen Tugas Kuliah. <a href="https://github.com/zakinurrohimm" class="text-indigo-600 hover:text-indigo-800" target="_blank">github.com/zakinurrohimm</a>
+        </div>
+    </footer>
+
 </body>
 </html>

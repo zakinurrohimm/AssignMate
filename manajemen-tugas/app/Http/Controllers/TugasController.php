@@ -4,20 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Tugas;
-use App\Models\MataKuliah; // Tambahkan ini agar sistem mengenali tabel Mata Kuliah
+use App\Models\MataKuliah;
 
 class TugasController extends Controller
 {
     public function index()
     {
-        $tugas = Tugas::with('mataKuliah')->orderBy('deadline', 'asc')->get();
-
-        // 1. Hitung Metrik untuk Dashboard Ringkasan
+        $tugas = Tugas::with('mataKuliah')->get();
         $totalTugas = $tugas->count();
         $tugasSelesai = $tugas->where('status', 'Selesai')->count();
-        $tugasBelum = $tugas->where('status', '!=', 'Selesai')->count();
+        $tugasBelum = $tugas->where('status', 'Belum')->count();
+        $mata_kuliah = MataKuliah::all();
 
-        // 2. Logika Sisa Waktu & Status Otomatis
+        // Logika Sisa Waktu & Status Otomatis
         foreach ($tugas as $item) {
             $sekarang = \Carbon\Carbon::now();
             $deadline = \Carbon\Carbon::parse($item->deadline);
@@ -45,29 +44,30 @@ class TugasController extends Controller
             }
         }
         
-        // Kirim variabel metrik ke tampilan view
-        return view('tugas.index', compact('tugas', 'totalTugas', 'tugasSelesai', 'tugasBelum'));
+        // Return view HANYA SEKALI di paling bawah dengan variabel lengkap
+        return view('tugas.index', compact('tugas', 'totalTugas', 'tugasSelesai', 'tugasBelum', 'mata_kuliah'));
     }
 
-    // Fungsi baru untuk menampilkan formulir tambah tugas
     public function create()
     {
-        $mata_kuliah = MataKuliah::all(); // Ambil semua data mata kuliah untuk dropdown
+        $mata_kuliah = MataKuliah::all();
         return view('tugas.create', compact('mata_kuliah'));
     }
 
     public function store(Request $request)
     {
-        // Menyimpan data ke database
-        Tugas::create([
-            'mata_kuliah_id' => $request->mata_kuliah_id,
-            'nama_tugas' => $request->nama_tugas,
-            'deadline' => $request->deadline,
-            // Status dan prioritas akan otomatis terisi nilai default dari database
+        $request->validate([
+            'mata_kuliah_id' => 'required',
+            'nama_tugas' => 'required',
+            'deadline' => 'required|date',
         ]);
 
-        // Setelah sukses menyimpan, kembalikan user ke halaman awal
-        return redirect('/');
+        try {
+            Tugas::create($request->all());
+            return redirect('/')->with('success', 'Tugas baru berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menambahkan tugas: ' . $e->getMessage())->withInput();
+        }
     }
 
     // Fungsi untuk mengubah status tugas menjadi Selesai
@@ -84,5 +84,47 @@ class TugasController extends Controller
         $tugas = Tugas::findOrFail($id);
         $tugas->delete();
         return redirect('/');
+    }
+
+    // Menampilkan form tambah mata kuliah
+    public function createMatkul()
+    {
+        $mata_kuliah = MataKuliah::all();
+        return view('tugas.create_matkul', compact('mata_kuliah'));
+    }
+
+    // Menyimpan mata kuliah baru ke database
+    public function storeMatkul(Request $request)
+    {
+        $request->validate([
+            'kode_matkul' => 'required|unique:mata_kuliah,kode_matkul',
+            'nama_matkul' => 'required',
+        ], [
+            'kode_matkul.unique' => 'Kode mata kuliah ini sudah terdaftar, silakan gunakan kode lain.',
+        ]);
+
+            try {
+            MataKuliah::create([
+                'kode_matkul' => $request->kode_matkul,
+                'nama_matkul' => $request->nama_matkul,
+                'dosen' => $request->dosen,
+            ]);
+
+            // Menggunakan redirect()->back() agar tetap di halaman form
+            return redirect()->back()->with('success', 'Mata kuliah baru berhasil ditambahkan!');
+            } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menambahkan mata kuliah: ' . $e->getMessage())->withInput();
+            }
+    }
+    
+    public function destroyMatkul($id)
+    {
+        try {
+            $matkul = MataKuliah::findOrFail($id);
+            $matkul->delete();
+            return redirect()->back()->with('success', 'Mata kuliah berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus! Pastikan tidak ada tugas aktif yang masih menggunakan mata kuliah ini.');
+        }
     }
 }
