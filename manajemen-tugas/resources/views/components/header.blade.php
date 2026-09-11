@@ -9,7 +9,7 @@
             <div class="w-3 h-3 bg-amber-500 animate-pulse"></div>
             <div>
                 <a href="/" class="flex items-center gap-2 hover:opacity-90 transition">
-                    <h1 class="text-xl font-bold tracking-widest text-white uppercase">ASIGNMATE <span class="text-amber-500 font-normal text-xs">// YOUR ASSIGNMENT MANAGEMENT</span></h1>
+                    <h1 class="text-xl font-bold tracking-widest text-white uppercase">ASIGNMATE <span class="text-amber-500 font-normal text-xs">// ASSIGNMENT MANAGEMENT</span></h1>
                 </a>
                 <p class="text-[10px] mono-font text-zinc-500 uppercase tracking-wider">// ACADEMIC PROTOCOL</p>
             </div>

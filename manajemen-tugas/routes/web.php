@@ -13,3 +13,4 @@ Route::get('/matkul/create', [TugasController::class, 'createMatkul']);
 Route::post('/matkul', [TugasController::class, 'storeMatkul']);
 Route::delete('/matkul/{id}', [TugasController::class, 'destroyMatkul']);
 Route::patch('/tugas/{id}/status', [TugasController::class, 'updateStatus']);
+Route::delete('/matkul/{id}', [TugasController::class, 'destroyMatkul'])->name('matkul.destroy');

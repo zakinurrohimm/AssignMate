@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASSIGNMATE TERMINAL</title>
+    <title>ASSIGNMATE - TERMINAL</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @vite('resources/css/app.css')
     <!-- Google Fonts untuk kesan Sci-Fi / Monospace -->
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Rajdhani', sans-serif; }
-        .mono-font { font-family: 'Share Tech Mono', monospace; }
-        /* Efek garis-garis scanline ala terminal taktis */
-        .scanlines {
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
-            background-size: 100% 4px;
-        }
+    body { 
+        font-family: 'Montserrat', sans-serif; 
+    }
+    .mono-font { 
+        font-family: 'Share Tech Mono', monospace; /* Tetap dipertahankan untuk teks ala terminal/angka */
+    }
+    .scanlines {
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+        background-size: 100% 4px;
+    }
     </style>
 </head>
 <body class="bg-[#0b0c10] text-slate-200 min-h-screen flex flex-col relative selection:bg-amber-500 selection:text-black">
