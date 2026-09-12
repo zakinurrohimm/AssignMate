@@ -1,10 +1,8 @@
-@props(['showReturn' => false, 'returnUrl' => '/'])
-
 <header class="fixed top-0 w-full z-50 bg-[#0b0c10]/90 backdrop-blur-sm border-b border-zinc-800">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         
-        <!-- Logo & Title -->
-        <div class="flex items-center gap-3">
+        <!-- Logo & Title (Sekarang bisa diklik untuk kembali ke Home/Dashboard) -->
+        <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none">
             <!-- Logo Gambar -->
             <img src="{{ asset('logo.png') }}" alt="Logo" class="w-8 h-8 object-contain">
 
@@ -15,17 +13,10 @@
                 </h1>
                 <p class="text-[9px] text-zinc-500 tracking-[0.2em] uppercase mono-font mt-0.5">// ACADEMIC PROTOCOL</p>
             </div>
-        </div>
+        </a>
 
         <!-- Right Nav -->
         <div class="flex items-center gap-4">
-            <!-- Tombol Return -->
-            @if($showReturn)
-                <a href="{{ $returnUrl }}" class="border border-zinc-700 hover:border-amber-500 text-zinc-400 hover:text-amber-400 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition mono-font">
-                    [<-] RETURN_COMMAND
-                </a>
-            @endif
-
             <!-- Blok Identitas & Logout -->
             @auth
                 <div class="h-4 w-px bg-zinc-800 hidden md:block"></div>
@@ -40,7 +31,8 @@
                     @csrf
                     <button type="submit" class="border border-zinc-800 hover:border-rose-900/80 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition mono-font flex items-center gap-2">
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
-                        [DISCONNECT]
+                        <span class="hidden sm:inline">[DISCONNECT]</span>
+                        <span class="sm:hidden">DC</span>
                     </button>
                 </form>
             @endauth

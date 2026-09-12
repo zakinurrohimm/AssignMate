@@ -24,26 +24,46 @@ class TugasController extends Controller
             $sekarang = \Carbon\Carbon::now();
             $deadline = \Carbon\Carbon::parse($item->deadline);
             
+            // 1. Jika tugas selesai
             if ($item->status == 'Selesai') {
-                $item->badge_color = 'bg-emerald-100 text-emerald-700';
+                $item->badge_color = 'border border-emerald-500/50 text-emerald-500 bg-emerald-950/30';
                 $item->sisa_waktu = 'Selesai';
                 continue;
             }
 
-            $selisihJam = $sekarang->diffInHours($deadline, false);
+            $interval = $sekarang->diff($deadline);
+            $isTerlambat = $sekarang->gt($deadline);
 
-            if ($selisihJam < 0) {
-                $item->sisa_waktu = 'Terlambat!';
-                $item->badge_color = 'bg-rose-100 text-rose-700 animate-pulse';
-            } elseif ($selisihJam <= 24) {
-                $item->sisa_waktu = 'Kurang dari 24 Jam!';
-                $item->badge_color = 'bg-orange-100 text-orange-700';
-            } elseif ($selisihJam <= 72) {
-                $item->sisa_waktu = '1 - 3 Hari lagi';
-                $item->badge_color = 'bg-amber-100 text-amber-700';
-            } else {
-                $item->sisa_waktu = $sekarang->diffInDays($deadline) . ' Hari lagi';
-                $item->badge_color = 'bg-blue-100 text-blue-700';
+            // 2. Jika Terlambat
+            if ($isTerlambat) {
+                $item->sisa_waktu = 'TERLAMBAT!';
+                $item->badge_color = 'border border-rose-600 text-rose-500 bg-rose-950/50 animate-pulse font-bold tracking-widest';
+            } 
+            // 3. Jika Waktu Masih Ada
+            else {
+                $waktuSpesifik = [];
+                if ($interval->days > 0) $waktuSpesifik[] = $interval->days . 'hri';
+                if ($interval->h > 0) $waktuSpesifik[] = $interval->h . 'jm';
+                if ($interval->i > 0) $waktuSpesifik[] = $interval->i . 'mnt';
+                
+                if (empty($waktuSpesifik)) {
+                    $waktuSpesifik[] = $interval->s . 'dtk';
+                }
+
+                $item->sisa_waktu = implode(' ', $waktuSpesifik);
+                
+                $totalHours = $sekarang->diffInHours($deadline);
+                
+                if ($totalHours <= 24) {
+                    // Hari H -> Merah Redup (Tanpa kedip)
+                    $item->badge_color = 'border border-rose-500/50 text-rose-400 bg-rose-950/20 font-bold';
+                } elseif ($totalHours <= 72) {
+                    // 3 Hari ke bawah -> Kuning/Amber
+                    $item->badge_color = 'border border-amber-500/50 text-amber-400 bg-amber-950/20';
+                } else {
+                    // Lebih dari 3 hari -> Netral/Abu-abu terminal
+                    $item->badge_color = 'border border-zinc-700 text-zinc-400 bg-zinc-900/50'; 
+                }
             }
         }
         
@@ -141,4 +161,34 @@ class TugasController extends Controller
             return redirect()->back()->with('error', 'Gagal menghapus! Pastikan tidak ada tugas aktif yang masih menggunakan mata kuliah ini.');
         }
     }
+
+    public function edit($id)
+    {
+        // Cari tugas berdasarkan ID dan pastikan itu milik user yang login
+        $tugas = Tugas::where('user_id', Auth::id())->findOrFail($id);
+        $mataKuliah = MataKuliah::where('user_id', Auth::id())->get();
+        
+        return view('tugas.edit', compact('tugas', 'mataKuliah'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'mata_kuliah_id' => 'required|exists:mata_kuliah,id',
+            'nama_tugas' => 'required|string|max:255',
+            'deadline' => 'required',
+        ]);
+
+        $tugas = Tugas::where('user_id', Auth::id())->findOrFail($id);
+        $formattedDeadline = str_replace('T', ' ', $request->deadline);
+
+        $tugas->update([
+            'mata_kuliah_id' => $request->mata_kuliah_id,
+            'nama_tugas' => $request->nama_tugas,
+            'deadline' => $formattedDeadline,
+        ]);
+
+        return redirect('/')->with('success', 'Parameter tugas berhasil diperbarui!');
+    }
+
 }
