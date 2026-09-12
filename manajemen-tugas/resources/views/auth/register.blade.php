@@ -91,7 +91,7 @@
             </div>
 
             <div class="text-center mt-6">
-                <a href="{{ route('login') }}" class="text-xs text-zinc-500 hover:text-amber-500 mono-font transition uppercase border-b border-transparent hover:border-amber-500 pb-1">
+                <a href="{{ route('login') }}" class="text-xs text-amber-500 hover:text-blue-500 mono-font transition uppercase border-b border-transparent hover:border-amber-500 pb-1">
                     // ESTABLISH_CONNECTION (Login)
                 </a>
             </div>
