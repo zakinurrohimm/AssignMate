@@ -15,7 +15,7 @@ class TugasController extends Controller
         $tugas = Tugas::with('mataKuliah')->where('user_id', Auth::id())->get();
         $totalTugas = $tugas->count();
         $tugasSelesai = $tugas->where('status', 'Selesai')->count();
-        $tugasBelum = $tugas->where('status', 'Belum')->count();
+        $tugasBelum = $tugas->where('status', '!=', 'Selesai')->count(); // Menghitung tugas yang belum selesai
         
         $mata_kuliah = MataKuliah::where('user_id', Auth::id())->get();
 

@@ -2,7 +2,8 @@
 @php $uid = uniqid('toggle-'); @endphp
 
 <div class="bg-zinc-900/90 border border-zinc-800" x-data="{ deleteModalOpen: false, deleteFormId: '', deleteMatkulName: '' }">
-    <input type="checkbox" id="{{ $uid }}" class="peer hidden" checked>
+    <!-- Hilangkan atribut 'checked' agar default-nya tertutup -->
+    <input type="checkbox" id="{{ $uid }}" class="peer hidden">
     
     <label for="{{ $uid }}" class="flex justify-between items-center cursor-pointer p-4 text-zinc-300 hover:bg-zinc-800/50 transition-colors">
         <span class="text-xs font-bold tracking-widest text-amber-500 uppercase mono-font">[+] SYSTEM_DIRECTORY // DAFTAR MATA KULIAH</span>
