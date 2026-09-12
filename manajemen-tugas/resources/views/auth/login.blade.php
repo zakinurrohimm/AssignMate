@@ -78,7 +78,7 @@
             </div>
 
             <div class="text-center mt-6">
-                <a href="{{ route('register') }}" class="text-xs text-zinc-500 hover:text-amber-500 mono-font transition uppercase border-b border-transparent hover:border-amber-500 pb-1">
+                <a href="{{ route('register') }}" class="text-xs text-amber-500 hover:text-blue-500 mono-font transition uppercase border-b border-transparent hover:border-amber-500 pb-1">
                     // INITIALIZE_NEW_OPERATOR (Register)
                 </a>
             </div>
