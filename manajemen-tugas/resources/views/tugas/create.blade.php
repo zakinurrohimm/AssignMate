@@ -44,11 +44,11 @@
 
                 @if ($errors->any())
                     <div class="mb-6 bg-zinc-950 border border-rose-900/60 text-rose-400 p-4 text-xs mono-font">
-                        <p class="font-bold mb-1">// VALIDATION_FAILED:</p>
+                     <p class="font-bold mb-1">// VALIDATION_FAILED:</p>
                         <ul class="list-disc list-inside space-y-1">
                             @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
+                        <li>{{ $error }}</li>
+                        @endforeach
                         </ul>
                     </div>
                 @endif

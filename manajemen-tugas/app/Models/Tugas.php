@@ -11,7 +11,7 @@ class Tugas extends Model
 
     // Kolom yang diizinkan untuk diisi
     protected $fillable = [
-        'mata_kuliah_id', 'nama_tugas', 'deskripsi', 
+        'user_id', 'mata_kuliah_id', 'nama_tugas', 'deskripsi', 
         'tanggal_diberikan', 'deadline', 'prioritas', 'status', 'keterangan'
     ];
 

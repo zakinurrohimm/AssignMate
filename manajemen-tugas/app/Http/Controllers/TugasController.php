@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Tugas;
 use App\Models\MataKuliah;
+use Illuminate\Support\Facades\Auth; // [!] Penting: Memanggil library Autentikasi
 
 class TugasController extends Controller
 {
     public function index()
     {
-        $tugas = Tugas::with('mataKuliah')->get();
+        // 1. FILTER DATA: Hanya ambil tugas & matkul yang user_id-nya sama dengan akun yang login
+        $tugas = Tugas::with('mataKuliah')->where('user_id', Auth::id())->get();
         $totalTugas = $tugas->count();
         $tugasSelesai = $tugas->where('status', 'Selesai')->count();
         $tugasBelum = $tugas->where('status', 'Belum')->count();
-        $mata_kuliah = MataKuliah::all();
+        
+        $mata_kuliah = MataKuliah::where('user_id', Auth::id())->get();
 
         // Logika Sisa Waktu & Status Otomatis
         foreach ($tugas as $item) {
@@ -44,85 +47,94 @@ class TugasController extends Controller
             }
         }
         
-        // Return view HANYA SEKALI di paling bawah dengan variabel lengkap
         return view('tugas.index', compact('tugas', 'totalTugas', 'tugasSelesai', 'tugasBelum', 'mata_kuliah'));
     }
 
-public function create()
-{
-    $mataKuliah = \App\Models\MataKuliah::all();
-    return view('tugas.create', compact('mataKuliah'));
-}
+    public function create()
+    {
+        $mataKuliah = MataKuliah::where('user_id', Auth::id())->get();
+        return view('tugas.create', compact('mataKuliah'));
+    }
 
     public function store(Request $request)
     {
         $request->validate([
-            'mata_kuliah_id' => 'required',
-            'nama_tugas' => 'required',
-            'deadline' => 'required|date',
+            'mata_kuliah_id' => 'required|exists:mata_kuliah,id',
+            'nama_tugas' => 'required|string|max:255',
+            'deadline' => 'required',
         ]);
 
-        try {
-            Tugas::create($request->all());
-            return redirect('/')->with('success', 'Tugas baru berhasil ditambahkan!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menambahkan tugas: ' . $e->getMessage())->withInput();
-        }
+        $formattedDeadline = str_replace('T', ' ', $request->deadline);
+
+        Tugas::create([
+            'user_id' => Auth::id(),
+            'mata_kuliah_id' => $request->mata_kuliah_id,
+            'nama_tugas' => $request->nama_tugas,
+            'deadline' => $formattedDeadline,
+            'status' => 'Belum Dikerjakan' // Diubah agar sesuai dengan enum database
+        ]);
+
+        return redirect('/')->with('success', 'Tugas baru berhasil ditambahkan!');
     }
 
-    // Fungsi untuk mengubah status tugas menjadi Selesai
     public function updateStatus($id)
     {
-    $tugas = \App\Models\Tugas::findOrFail($id);
-    $tugas->status = 'Selesai';
-    $tugas->save();
+        $tugas = Tugas::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        
+        // Sesuaikan dengan teks ENUM di database Anda ('Selesai' atau 'Selesai Dikerjakan')
+        $tugas->update([
+            'status' => 'Selesai' // Pastikan string ini cocok dengan pilihan ENUM status di database
+        ]);
 
-    return redirect()->back()->with('success', 'Status tugas berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Status tugas berhasil diperbarui menjadi Selesai.');
     }
 
-    // Fungsi untuk menghapus tugas dari database
     public function destroy($id)
     {
-        $tugas = Tugas::findOrFail($id);
+        $tugas = Tugas::where('user_id', Auth::id())->findOrFail($id);
         $tugas->delete();
         return redirect('/');
     }
 
-    // Menampilkan form tambah mata kuliah
     public function createMatkul()
     {
-        $mata_kuliah = MataKuliah::all();
+        $mata_kuliah = MataKuliah::where('user_id', Auth::id())->get();
         return view('tugas.create_matkul', compact('mata_kuliah'));
     }
 
-    // Menyimpan mata kuliah baru ke database
     public function storeMatkul(Request $request)
     {
         $request->validate([
-            'kode_matkul' => 'required|unique:mata_kuliah,kode_matkul',
+            'kode_matkul' => [
+                'required',
+                // Aturan unique khusus untuk user_id yang sedang login
+                \Illuminate\Validation\Rule::unique('mata_kuliah')->where(function ($query) {
+                    return $query->where('user_id', Auth::id());
+                }),
+            ],
             'nama_matkul' => 'required',
         ], [
-            'kode_matkul.unique' => 'Kode mata kuliah ini sudah terdaftar, silakan gunakan kode lain.',
+            'kode_matkul.unique' => 'Kode mata kuliah ini sudah terdaftar di akun Anda.'
         ]);
 
-            try {
+        try {
             MataKuliah::create([
+                'user_id' => Auth::id(),
                 'kode_matkul' => $request->kode_matkul,
                 'nama_matkul' => $request->nama_matkul,
                 'dosen' => $request->dosen,
             ]);
 
-            // Menggunakan redirect()->back() agar tetap di halaman form
             return redirect()->back()->with('success', 'Mata kuliah baru berhasil ditambahkan!');
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menambahkan mata kuliah: ' . $e->getMessage())->withInput();
-            }
+        }
     }
     
     public function destroyMatkul($id)
     {
         try {
-            $matkul = MataKuliah::findOrFail($id);
+            $matkul = MataKuliah::where('user_id', Auth::id())->findOrFail($id);
             $matkul->delete();
             return redirect()->back()->with('success', 'Mata kuliah berhasil dihapus!');
         } catch (\Exception $e) {
