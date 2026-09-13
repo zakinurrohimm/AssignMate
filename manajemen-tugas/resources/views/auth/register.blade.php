@@ -25,6 +25,7 @@
 
     <div class="w-full max-w-md bg-zinc-900/90 border border-zinc-800 p-8 relative z-20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
         <div class="border-b border-zinc-800 pb-4 mb-6 text-center">
+            <img src="{{ asset('logo.png') }}" alt="ASSIGNMATE Logo" class="h-16 w-auto mx-auto mb-4">
             <h1 class="text-3xl font-bold tracking-widest text-amber-500 uppercase mono-font">ASSIGNMATE</h1>
             <p class="text-xs text-zinc-500 mono-font mt-2">// INITIALIZE_NEW_OPERATOR</p>
         </div>

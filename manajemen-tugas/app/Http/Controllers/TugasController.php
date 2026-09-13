@@ -31,7 +31,6 @@ class TugasController extends Controller
                 continue;
             }
 
-            $interval = $sekarang->diff($deadline);
             $isTerlambat = $sekarang->gt($deadline);
 
             // 2. Jika Terlambat
@@ -39,18 +38,22 @@ class TugasController extends Controller
                 $item->sisa_waktu = 'TERLAMBAT!';
                 $item->badge_color = 'border border-rose-600 text-rose-500 bg-rose-950/50 animate-pulse font-bold tracking-widest';
             } 
-            // 3. Jika Waktu Masih Ada
-            else {
-                $waktuSpesifik = [];
-                if ($interval->days > 0) $waktuSpesifik[] = $interval->days . 'hri';
-                if ($interval->h > 0) $waktuSpesifik[] = $interval->h . 'jm';
-                if ($interval->i > 0) $waktuSpesifik[] = $interval->i . 'mnt';
-                
-                if (empty($waktuSpesifik)) {
-                    $waktuSpesifik[] = $interval->s . 'dtk';
-                }
+            // 3. Jika Waktu Masih Ada (Tampilkan 1 satuan terbesar saja)
+			else {
+                $diffInDays = (int) $sekarang->diffInDays($deadline);
+                $diffInHours = (int) $sekarang->diffInHours($deadline);
+                $diffInMinutes = (int) $sekarang->diffInMinutes($deadline);
+                $diffInSeconds = (int) $sekarang->diffInSeconds($deadline);
 
-                $item->sisa_waktu = implode(' ', $waktuSpesifik);
+                if ($diffInDays > 0) {
+                    $item->sisa_waktu = $diffInDays . ' HARI LAGI';
+                } elseif ($diffInHours > 0) {
+                    $item->sisa_waktu = $diffInHours . ' JAM LAGI';
+                } elseif ($diffInMinutes > 0) {
+                    $item->sisa_waktu = $diffInMinutes . ' MENIT LAGI';
+                } else {
+                    $item->sisa_waktu = max(0, $diffInSeconds) . ' DETIK LAGI';
+                }
                 
                 $totalHours = $sekarang->diffInHours($deadline);
                 

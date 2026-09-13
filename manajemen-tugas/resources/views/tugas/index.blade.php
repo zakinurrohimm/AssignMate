@@ -25,6 +25,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Google Fonts untuk kesan Sci-Fi / Monospace -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
             <!-- Styles / Scripts -->
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -166,7 +167,7 @@
                                 <td class="p-4 text-white font-semibold">{{ $t->nama_tugas }}</td>
                                 <td class="p-4 mono-font text-xs text-zinc-400">{{ $t->deadline }}</td>
                                 <td class="p-4">
-                                    <span class="px-2 py-1 text-[10px] uppercase mono-font {{ $t->badge_color }}">
+                                    <span class="{{ $t->badge_color }} px-2 py-1 rounded whitespace-nowrap text-xs">
                                         {{ $t->sisa_waktu }}
                                     </span>
                                 </td>
