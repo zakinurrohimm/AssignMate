@@ -9,17 +9,44 @@ use Illuminate\Support\Facades\Auth; // [!] Penting: Memanggil library Autentika
 
 class TugasController extends Controller
 {
-    public function index()
+    public function index(Request $request) // [!] Tambahkan Request $request disini
     {
-        // 1. FILTER DATA: Hanya ambil tugas & matkul yang user_id-nya sama dengan akun yang login
-        $tugas = Tugas::with('mataKuliah')->where('user_id', Auth::id())->get();
-        $totalTugas = $tugas->count();
-        $tugasSelesai = $tugas->where('status', 'Selesai')->count();
-        $tugasBelum = $tugas->where('status', '!=', 'Selesai')->count(); // Menghitung tugas yang belum selesai
+        // Hitung total statistik langsung dari database agar pagination tidak merusak angkanya
+        $totalTugas = Tugas::where('user_id', Auth::id())->count();
+        $tugasSelesai = Tugas::where('user_id', Auth::id())->where('status', 'Selesai')->count();
+        $tugasBelum = Tugas::where('user_id', Auth::id())->where('status', '!=', 'Selesai')->count();
         
         $mata_kuliah = MataKuliah::where('user_id', Auth::id())->get();
 
-        // Logika Sisa Waktu & Status Otomatis
+        // 1. Inisialisasi Query untuk tugas user yang login
+        $query = Tugas::with('mataKuliah')->where('user_id', Auth::id());
+
+        // 2. FITUR SEARCH (Pencarian Nama Tugas)
+        if ($request->filled('search')) {
+            $query->where('nama_tugas', 'like', '%' . $request->search . '%');
+        }
+
+        // 3. FITUR FILTER (Berdasarkan Mata Kuliah)
+        if ($request->filled('matkul_id')) {
+            $query->where('mata_kuliah_id', $request->matkul_id);
+        }
+        
+        // 4. FITUR FILTER (Berdasarkan Status Selesai/Belum)
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // 5. FITUR SORTING (Urutkan Deadline ASC/DESC, Default: ASC)
+        $sort = $request->get('sort', 'asc');
+        
+        // LOGIKA BARU: Taruh status 'Selesai' di paling bawah, sisanya di atas.
+        $query->orderByRaw("CASE WHEN status = 'Selesai' THEN 1 ELSE 0 END ASC")
+              ->orderBy('deadline', $sort);
+
+        // 6. FITUR PAGINATION (Batasi 15 tugas per halaman dan bawa query ke halaman selanjutnya)
+        $tugas = $query->paginate(15)->appends($request->query());
+
+        // Logika Sisa Waktu & Status Otomatis (TETAP SAMA persis seperti aslinya)
         foreach ($tugas as $item) {
             $sekarang = \Carbon\Carbon::now();
             $deadline = \Carbon\Carbon::parse($item->deadline);
@@ -39,7 +66,7 @@ class TugasController extends Controller
                 $item->badge_color = 'border border-rose-600 text-rose-500 bg-rose-950/50 animate-pulse font-bold tracking-widest';
             } 
             // 3. Jika Waktu Masih Ada (Tampilkan 1 satuan terbesar saja)
-			else {
+            else {
                 $diffInDays = (int) $sekarang->diffInDays($deadline);
                 $diffInHours = (int) $sekarang->diffInHours($deadline);
                 $diffInMinutes = (int) $sekarang->diffInMinutes($deadline);
@@ -87,7 +114,7 @@ class TugasController extends Controller
             'deadline' => 'required',
         ]);
 
-        $formattedDeadline = str_replace('T', ' ', $request->deadline);
+        $formattedDeadline = str_replace('T', 'Log', ' ', $request->deadline);
 
         Tugas::create([
             'user_id' => Auth::id(),
