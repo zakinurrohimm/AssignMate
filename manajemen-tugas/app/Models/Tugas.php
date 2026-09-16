@@ -9,15 +9,26 @@ class Tugas extends Model
 {
     use HasFactory;
 
-    // Kolom yang diizinkan untuk diisi
+    protected $table = 'tugas'; // Sesuaikan kalau nama tabelmu beda
+
     protected $fillable = [
-        'user_id', 'mata_kuliah_id', 'nama_tugas', 'deskripsi', 
-        'tanggal_diberikan', 'deadline', 'prioritas', 'status', 'keterangan'
+        'user_id', 
+        'mata_kuliah_id', 
+        'nama_tugas', 
+        'jenis_tugas', 
+        'deadline', 
+        'status'
     ];
 
-    // Relasi: 1 Tugas ini milik 1 Mata Kuliah
+    // INI RELASI YANG TADI ERROR KARENA KELUPAAN
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Pastikan relasi mataKuliah juga ada (kalau belum, tambahin sekalian)
     public function mataKuliah()
     {
-        return $this->belongsTo(MataKuliah::class);
+        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
     }
 }
