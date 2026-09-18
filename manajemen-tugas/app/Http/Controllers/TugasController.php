@@ -5,13 +5,76 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Tugas;
 use App\Models\MataKuliah;
-use Illuminate\Support\Facades\Auth; // [!] Penting: Memanggil library Autentikasi
+use Illuminate\Support\Facades\Auth;
+
+// Tambahan wajib untuk fitur Lazy Cron / Pengirim Email
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class TugasController extends Controller
 {
-    public function index(Request $request) // [!] Tambahkan Request $request disini
+    public function index(Request $request)
     {
-        // Hitung total statistik langsung dari database agar pagination tidak merusak angkanya
+        // =========================================================================
+        // FITUR LAZY CRON: JALANIN REMINDER EMAIL 1X SEHARI
+        // =========================================================================
+        if (!Cache::has('reminder_dikirim_hari_ini')) {
+            $hariIni = Carbon::today();
+            $hMin3 = Carbon::today()->addDays(3);
+            
+            // Cari tugas mendesak untuk SEMUA user di database
+            $tugasMendesak = Tugas::with(['user', 'mataKuliah'])
+                                  ->where('status', '!=', 'Selesai')
+                                  ->where(function($query) use ($hariIni, $hMin3) {
+                                      $query->whereDate('deadline', $hariIni)
+                                            ->orWhereDate('deadline', $hMin3);
+                                  })
+                                  ->get();
+
+            if ($tugasMendesak->count() > 0) {
+                foreach ($tugasMendesak as $t) {
+                    // Pengamanan: Lewati jika user tidak punya email valid
+                    if (!$t->user || !$t->user->email) {
+                        continue; 
+                    }
+
+                    // Tentukan ini H-3 atau Hari H
+                    $tglDeadline = Carbon::parse($t->deadline)->startOfDay();
+                    
+                    if ($tglDeadline->equalTo($hariIni)) {
+                        $statusWaktu = "HARI INI (DEADLINE!)";
+                        $tipeAlert = "CRITICAL_WARNING";
+                    } else {
+                        $statusWaktu = "H-3 (TIGA HARI LAGI)";
+                        $tipeAlert = "YELLOW_ALERT";
+                    }
+
+                    // Format Pesan Email
+                    $pesan = "// SYSTEM_ALERT: $tipeAlert!\n\n"
+                           . "OPERATOR    : " . strtoupper($t->user->name) . "\n"
+                           . "MATA KULIAH : " . strtoupper($t->mataKuliah->nama_matkul ?? 'TIDAK ADA') . "\n"
+                           . "TUGAS       : [" . strtoupper($t->nama_tugas) . "]\n"
+                           . "DEADLINE    : " . $t->deadline . "\n\n"
+                           . "STATUS: Batas waktu tersisa $statusWaktu.\n"
+                           . "// HARAP SEGERA DIEKSEKUSI.";
+
+                    // Eksekusi Kirim Email ke masing-masing User
+                    Mail::raw($pesan, function ($message) use ($t, $tipeAlert) {
+                        $message->to($t->user->email)
+                                ->subject("[$tipeAlert] TUGAS: " . strtoupper($t->nama_tugas));
+                    });
+                }
+            }
+            
+            // KUNCI GEMBOK: Tandai kalau hari ini udah ngirim email.
+            // Fitur ini otomatis expired / ke-reset nanti malam jam 23:59:59.
+            Cache::put('reminder_dikirim_hari_ini', true, Carbon::now()->endOfDay());
+        }
+        // =========================================================================
+
+
+        // Hitung total statistik langsung dari database
         $totalTugas = Tugas::where('user_id', Auth::id())->count();
         $tugasSelesai = Tugas::where('user_id', Auth::id())->where('status', 'Selesai')->count();
         $tugasBelum = Tugas::where('user_id', Auth::id())->where('status', '!=', 'Selesai')->count();
@@ -36,17 +99,15 @@ class TugasController extends Controller
             $query->where('status', $request->status);
         }
 
-        // 5. FITUR SORTING (Urutkan Deadline ASC/DESC, Default: ASC)
+        // 5. FITUR SORTING: Selesai selalu di bawah, sisanya diurutkan berdasarkan deadline ASC/DESC
         $sort = $request->get('sort', 'asc');
-        
-        // LOGIKA BARU: Taruh status 'Selesai' di paling bawah, sisanya di atas.
         $query->orderByRaw("CASE WHEN status = 'Selesai' THEN 1 ELSE 0 END ASC")
               ->orderBy('deadline', $sort);
 
-        // 6. FITUR PAGINATION (Batasi 15 tugas per halaman dan bawa query ke halaman selanjutnya)
+        // 6. FITUR PAGINATION (Batasi 15 tugas per halaman)
         $tugas = $query->paginate(15)->appends($request->query());
 
-        // Logika Sisa Waktu & Status Otomatis (TETAP SAMA persis seperti aslinya)
+        // Logika Sisa Waktu & Status Otomatis
         foreach ($tugas as $item) {
             $sekarang = \Carbon\Carbon::now();
             $deadline = \Carbon\Carbon::parse($item->deadline);
@@ -65,7 +126,7 @@ class TugasController extends Controller
                 $item->sisa_waktu = 'TERLAMBAT!';
                 $item->badge_color = 'border border-rose-600 text-rose-500 bg-rose-950/50 animate-pulse font-bold tracking-widest';
             } 
-            // 3. Jika Waktu Masih Ada (Tampilkan 1 satuan terbesar saja)
+            // 3. Jika Waktu Masih Ada
             else {
                 $diffInDays = (int) $sekarang->diffInDays($deadline);
                 $diffInHours = (int) $sekarang->diffInHours($deadline);
@@ -85,13 +146,10 @@ class TugasController extends Controller
                 $totalHours = $sekarang->diffInHours($deadline);
                 
                 if ($totalHours <= 24) {
-                    // Hari H -> Merah Redup (Tanpa kedip)
                     $item->badge_color = 'border border-rose-500/50 text-rose-400 bg-rose-950/20 font-bold';
                 } elseif ($totalHours <= 72) {
-                    // 3 Hari ke bawah -> Kuning/Amber
                     $item->badge_color = 'border border-amber-500/50 text-amber-400 bg-amber-950/20';
                 } else {
-                    // Lebih dari 3 hari -> Netral/Abu-abu terminal
                     $item->badge_color = 'border border-zinc-700 text-zinc-400 bg-zinc-900/50'; 
                 }
             }
@@ -114,14 +172,14 @@ class TugasController extends Controller
             'deadline' => 'required',
         ]);
 
-        $formattedDeadline = str_replace('T', 'Log', ' ', $request->deadline);
+        $formattedDeadline = str_replace('T', ' ', $request->deadline);
 
         Tugas::create([
             'user_id' => Auth::id(),
             'mata_kuliah_id' => $request->mata_kuliah_id,
             'nama_tugas' => $request->nama_tugas,
             'deadline' => $formattedDeadline,
-            'status' => 'Belum Dikerjakan' // Diubah agar sesuai dengan enum database
+            'status' => 'Belum Dikerjakan'
         ]);
 
         return redirect('/')->with('success', 'Tugas baru berhasil ditambahkan!');
@@ -131,9 +189,8 @@ class TugasController extends Controller
     {
         $tugas = Tugas::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         
-        // Sesuaikan dengan teks ENUM di database Anda ('Selesai' atau 'Selesai Dikerjakan')
         $tugas->update([
-            'status' => 'Selesai' // Pastikan string ini cocok dengan pilihan ENUM status di database
+            'status' => 'Selesai'
         ]);
 
         return redirect()->back()->with('success', 'Status tugas berhasil diperbarui menjadi Selesai.');
@@ -157,7 +214,6 @@ class TugasController extends Controller
         $request->validate([
             'kode_matkul' => [
                 'required',
-                // Aturan unique khusus untuk user_id yang sedang login
                 \Illuminate\Validation\Rule::unique('mata_kuliah')->where(function ($query) {
                     return $query->where('user_id', Auth::id());
                 }),
@@ -194,7 +250,6 @@ class TugasController extends Controller
 
     public function edit($id)
     {
-        // Cari tugas berdasarkan ID dan pastikan itu milik user yang login
         $tugas = Tugas::where('user_id', Auth::id())->findOrFail($id);
         $mataKuliah = MataKuliah::where('user_id', Auth::id())->get();
         
@@ -220,5 +275,4 @@ class TugasController extends Controller
 
         return redirect('/')->with('success', 'Parameter tugas berhasil diperbarui!');
     }
-
 }

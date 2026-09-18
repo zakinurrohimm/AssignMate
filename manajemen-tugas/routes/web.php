@@ -32,13 +32,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    Route::get('/verified-success', function () {
+        return view('auth.verified-success');
+    })->name('verified.success');
 });
-
 
 // =========================================================================
 // RUTE TRIGGER ALARM (Ditaruh di luar auth agar bisa diakses cron-job.org)
 // =========================================================================
-Route::get('/api/trigger-reminder', function () {
+Route::get('/api/trigger-reminder', function (\Illuminate\Http\Request $request) {
+    // 1. CEK KUNCI RAHASIA (BYPASS ANTI-BOT)
+    if ($request->query('key') !== 'assignmate123') {
+        return response("SYSTEM ERROR: UNAUTHORIZED.", 401);
+    }
+
+    // 2. JIKA KUNCI BENAR, LANJUT EKSEKUSI
     // Ambil tanggal hari ini dan H-3
     $hariIni = Carbon::today();
     $hMin3 = Carbon::today()->addDays(3);
@@ -73,13 +82,13 @@ Route::get('/api/trigger-reminder', function () {
             }
 
             // Format Pesan Email ala Terminal
-            $pesan = "// PERINGATAN_TUGAS: $tipeAlert!\n\n"
+            $pesan = "// SYSTEM_ALERT: $tipeAlert!\n\n"
                    . "OPERATOR    : " . strtoupper($t->user->name) . "\n"
                    . "MATA KULIAH : " . strtoupper($t->mataKuliah->nama_matkul ?? 'TIDAK ADA') . "\n"
                    . "TUGAS       : [" . strtoupper($t->nama_tugas) . "]\n"
                    . "DEADLINE    : " . $t->deadline . "\n\n"
                    . "STATUS: Batas waktu tersisa $statusWaktu.\n"
-                   . "AYO DIKERJAIN OM !!!.";
+                   . "// HARAP SEGERA DIEKSEKUSI.";
 
             // Eksekusi Kirim Email ke masing-masing User
             Mail::raw($pesan, function ($message) use ($t, $tipeAlert) {
