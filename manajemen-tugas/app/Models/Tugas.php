@@ -15,6 +15,8 @@ class Tugas extends Model
         'user_id', 
         'mata_kuliah_id', 
         'nama_tugas', 
+        'deskripsi',
+        'prioritas',
         'jenis_tugas', 
         'deadline', 
         'status'

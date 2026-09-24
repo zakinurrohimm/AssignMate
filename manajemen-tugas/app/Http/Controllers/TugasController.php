@@ -96,7 +96,33 @@ class TugasController extends Controller
         
         // 4. FITUR FILTER (Berdasarkan Status Selesai/Belum)
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'Belum Selesai') {
+                $query->where('status', '!=', 'Selesai');
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        // 5. FITUR FILTER PRIORITAS (Tinggi / Sedang / Rendah)
+        if ($request->filled('prioritas')) {
+            $query->where('prioritas', $request->prioritas);
+        }
+
+        // 6. FITUR FILTER URGENSI WAKTU / DEADLINE
+        if ($request->filled('urgency')) {
+            $now = Carbon::now();
+            if ($request->urgency === 'critical') {
+                $query->where('status', '!=', 'Selesai')
+                      ->where('deadline', '>=', $now)
+                      ->where('deadline', '<=', $now->copy()->addHours(24));
+            } elseif ($request->urgency === 'urgent') {
+                $query->where('status', '!=', 'Selesai')
+                      ->where('deadline', '>=', $now)
+                      ->where('deadline', '<=', $now->copy()->addDays(3));
+            } elseif ($request->urgency === 'overdue') {
+                $query->where('status', '!=', 'Selesai')
+                      ->where('deadline', '<', $now);
+            }
         }
 
         // 5. FITUR SORTING: Selesai selalu di bawah, sisanya diurutkan berdasarkan deadline ASC/DESC
@@ -155,6 +181,10 @@ class TugasController extends Controller
             }
         }
         
+        if ($request->ajax()) {
+            return view('tugas.partials.table_content', compact('tugas'));
+        }
+
         return view('tugas.index', compact('tugas', 'totalTugas', 'tugasSelesai', 'tugasBelum', 'mata_kuliah'));
     }
 
@@ -170,6 +200,8 @@ class TugasController extends Controller
             'mata_kuliah_id' => 'required|exists:mata_kuliah,id',
             'nama_tugas' => 'required|string|max:255',
             'deadline' => 'required',
+            'prioritas' => 'nullable|in:Tinggi,Sedang,Rendah',
+            'deskripsi' => 'nullable|string',
         ]);
 
         $formattedDeadline = str_replace('T', ' ', $request->deadline);
@@ -179,6 +211,8 @@ class TugasController extends Controller
             'mata_kuliah_id' => $request->mata_kuliah_id,
             'nama_tugas' => $request->nama_tugas,
             'deadline' => $formattedDeadline,
+            'prioritas' => $request->prioritas ?? 'Sedang',
+            'deskripsi' => $request->deskripsi,
             'status' => 'Belum Dikerjakan'
         ]);
 
@@ -262,16 +296,27 @@ class TugasController extends Controller
             'mata_kuliah_id' => 'required|exists:mata_kuliah,id',
             'nama_tugas' => 'required|string|max:255',
             'deadline' => 'required',
+            'prioritas' => 'nullable|in:Tinggi,Sedang,Rendah',
+            'deskripsi' => 'nullable|string',
         ]);
 
         $tugas = Tugas::where('user_id', Auth::id())->findOrFail($id);
         $formattedDeadline = str_replace('T', ' ', $request->deadline);
 
-        $tugas->update([
+        $updateData = [
             'mata_kuliah_id' => $request->mata_kuliah_id,
             'nama_tugas' => $request->nama_tugas,
             'deadline' => $formattedDeadline,
-        ]);
+        ];
+
+        if ($request->filled('prioritas')) {
+            $updateData['prioritas'] = $request->prioritas;
+        }
+        if ($request->has('deskripsi')) {
+            $updateData['deskripsi'] = $request->deskripsi;
+        }
+
+        $tugas->update($updateData);
 
         return redirect('/')->with('success', 'Parameter tugas berhasil diperbarui!');
     }
